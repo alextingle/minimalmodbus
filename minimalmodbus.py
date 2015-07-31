@@ -70,7 +70,7 @@ BYTESIZE = 8
 STOPBITS = 1
 """Default value for the number of stopbits (int)."""
 
-TIMEOUT  = 0.05
+TIMEOUT  = 1.0
 """Default value for the timeout value in seconds (float)."""
 
 CLOSE_PORT_AFTER_EACH_CALL = False
