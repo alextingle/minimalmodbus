@@ -528,6 +528,11 @@ class Instrument():
 
         self._genericCommand(16, registeraddress, values, numberOfRegisters=len(values), payloadformat='registers')
 
+
+    def diagnostics(self, subfunction, data=0x00):
+        return self._genericCommand(8, subfunction, data, numberOfRegisters=1, payloadformat='registers')
+
+
     #####################
     ## Generic command ##
     #####################
@@ -562,7 +567,7 @@ class Instrument():
         NUMBER_OF_BITS = 1
         NUMBER_OF_BYTES_FOR_ONE_BIT = 1
         NUMBER_OF_BYTES_BEFORE_REGISTERDATA = 1
-        ALL_ALLOWED_FUNCTIONCODES = list(range(1, 7)) + [15, 16]  # To comply with both Python2 and Python3
+        ALL_ALLOWED_FUNCTIONCODES = list(range(1, 9)) + [15, 16]  # To comply with both Python2 and Python3
         MAX_NUMBER_OF_REGISTERS = 255
 
         # Payload format constants, so datatypes can be told apart.
@@ -594,7 +599,7 @@ class Instrument():
         if functioncode in [3, 4, 6, 16] and payloadformat is None:
             payloadformat = PAYLOADFORMAT_REGISTER
 
-        if functioncode in [3, 4, 6, 16]:
+        if functioncode in [3, 4, 6, 8, 16]:
             if payloadformat not in ALL_PAYLOADFORMATS:
                 raise ValueError('The payload format is unknown. Given format: {0!r}, functioncode: {1!r}.'.\
                     format(payloadformat, functioncode))
@@ -665,6 +670,11 @@ class Instrument():
             payloadToSlave = _numToTwoByteString(registeraddress) + \
                             _numToTwoByteString(value, numberOfDecimals, signed=signed)
 
+        elif functioncode == 8:
+            # Actually <subfunction> + <data>
+            payloadToSlave = _numToTwoByteString(registeraddress) + \
+                            _numToTwoByteString(value)
+
         elif functioncode == 15:
             payloadToSlave = _numToTwoByteString(registeraddress) + \
                             _numToTwoByteString(NUMBER_OF_BITS) + \
@@ -700,7 +710,7 @@ class Instrument():
         if functioncode in [1, 2, 3, 4]:
             _checkResponseByteCount(payloadFromSlave)  # response byte count
 
-        if functioncode in [5, 6, 15, 16]:
+        if functioncode in [5, 6, 8, 15, 16]:
             _checkResponseRegisterAddress(payloadFromSlave, registeraddress)  # response register address
 
         if functioncode == 5:
@@ -748,6 +758,11 @@ class Instrument():
 
             raise ValueError('Wrong payloadformat for return value generation. ' + \
                 'Given {0}'.format(payloadformat))
+
+        if functioncode in [8]:
+            #print repr(payloadFromSlave)
+            registerdata = payloadFromSlave[2:]
+            return _bytestringToValuelist(registerdata, numberOfRegisters)
 
     ##########################################
     ## Communication implementation details ##
